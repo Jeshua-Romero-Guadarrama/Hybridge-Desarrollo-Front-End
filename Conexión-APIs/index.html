@@ -1,172 +1,28 @@
 <!doctype html>
 <html lang="es">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Naves de Star Wars — Practica React (JS)</title>
-
-  <!-- Tailwind (utilidades CSS) -->
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- React 18 UMD (versiones fijadas) -->
-  <script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.development.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.development.js"></script>
-
-  <!-- Babel Standalone para poder usar JSX directamente -->
-  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone@7.25.2/babel.min.js"></script>
-</head>
-<body class="min-h-screen bg-slate-950 text-slate-100">
-  <div id="root"></div>
-
-  <!-- ===================== APP (JSX) ===================== -->
-  <script type="text/babel" data-presets="react">
-    // ============================================================
-    // 🧩 Componente de presentación: <StarshipCard />
-    // - Recibe una nave y solo la renderiza.
-    // - Separación de responsabilidades para mejor mantenibilidad.
-    // ============================================================
-    function Etiqueta({ t, v }) {
-      return (
-        <p className="text-sm">
-          <span className="text-slate-400">{t}: </span>
-          <span className="font-medium text-slate-100">{v}</span>
-        </p>
-      );
-    }
-
-    function StarshipCard({ nave, className = "" }) {
-      return (
-        <article
-          className={
-            "rounded-xl border border-slate-800 bg-slate-900/60 p-5 shadow " +
-            "shadow-black/30 hover:shadow-black/40 transition " + className
-          }
-        >
-          <h3 className="text-lg font-bold text-yellow-400">{nave.name}</h3>
-          <p className="text-slate-300 mb-3">{nave.model}</p>
-
-          <div className="grid grid-cols-2 gap-x-6 gap-y-2">
-            <Etiqueta t="Fabricante" v={nave.manufacturer} />
-            <Etiqueta t="Clase" v={nave.starship_class} />
-            <Etiqueta t="Costo (créditos)" v={nave.cost_in_credits} />
-            <Etiqueta t="Tripulación" v={nave.crew} />
-            <Etiqueta t="Pasajeros" v={nave.passengers} />
-            <Etiqueta t="Hyperdrive" v={nave.hyperdrive_rating} />
-          </div>
-        </article>
-      );
-    }
-
-    // ============================================================
-    // 🚀 Contenedor: <Starships />
-    // - Hace fetch a SWAPI, maneja loading/error/datos.
-    // - Usa early return para estados transitorios.
-    // ============================================================
-    const { useEffect, useState } = React;
-
-    async function fetchTodasLasNaves(signal) {
-      let url = "https://swapi.dev/api/starships/?format=json";
-      const acumulado = [];
-
-      while (url) {
-        const res = await fetch(url, { signal });
-        if (!res.ok) throw new Error(`HTTP ${res.status} al consultar SWAPI`);
-        const data = await res.json();
-        acumulado.push(...data.results);
-        url = data.next; // null si ya no hay más páginas
-      }
-      return acumulado;
-    }
-
-    function Starships() {
-      const [naves, setNaves] = useState(null);
-      const [cargando, setCargando] = useState(false);
-      const [error, setError] = useState(null);
-
-      const cargar = async () => {
-        setCargando(true);
-        setError(null);
-        try {
-          const ac = new AbortController();
-          const datos = await fetchTodasLasNaves(ac.signal);
-          setNaves(datos);
-        } catch (e) {
-          setNaves(null);
-          setError(e?.message || "Error desconocido al cargar datos");
-        } finally {
-          setCargando(false);
-        }
-      };
-
-      useEffect(() => { cargar(); }, []);
-
-      // Loading
-      if (cargando) {
-        return (
-          <section className="max-w-5xl mx-auto p-6">
-            <h2 className="text-3xl font-extrabold text-yellow-400 mb-6">Naves de Star Wars</h2>
-            <div className="rounded-lg border border-slate-700 bg-slate-800 p-5 text-slate-200" aria-live="polite">
-              Cargando naves…
-            </div>
-          </section>
-        );
-      }
-
-      // Error (early return)
-      if (error) {
-        return (
-          <section className="max-w-5xl mx-auto p-6">
-            <h2 className="text-3xl font-extrabold text-yellow-400 mb-6">Naves de Star Wars</h2>
-            <div className="rounded-lg bg-red-800/90 text-white p-5">
-              <p className="font-medium">Error al cargar los datos</p>
-              <p className="text-sm text-red-100/90 mt-1">{error}</p>
-              <button
-                onClick={cargar}
-                className="mt-4 inline-flex items-center gap-2 rounded-md bg-yellow-400 px-4 py-2 font-semibold text-slate-900 hover:bg-yellow-300 transition"
-              >
-                Reintentar
-              </button>
-            </div>
-          </section>
-        );
-      }
-
-      // Sin datos
-      if (!naves || naves.length === 0) {
-        return (
-          <section className="max-w-5xl mx-auto p-6">
-            <h2 className="text-3xl font-extrabold text-yellow-400 mb-6">Naves de Star Wars</h2>
-            <div className="rounded-lg border border-slate-700 bg-slate-800 p-5 text-slate-200">
-              No se encontraron naves.
-            </div>
-          </section>
-        );
-      }
-
-      // Render con datos
-      return (
-        <section className="max-w-5xl mx-auto p-6">
-          <h2 className="text-3xl font-extrabold text-yellow-400 mb-6">Naves de Star Wars</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {naves.map((nave) => (
-              <StarshipCard key={`${nave.name}-${nave.model}`} nave={nave} />
-            ))}
-          </div>
-        </section>
-      );
-    }
-
-    function App() {
-      return <Starships />;
-    }
-
-    // Montaje en el root
-    const root = ReactDOM.createRoot(document.getElementById("root"));
-    root.render(
-      <React.StrictMode>
-        <App />
-      </React.StrictMode>
-    );
-  </script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Naves de Star Wars</title>
+    <style>
+      body { margin: 0; font-family: system-ui, Arial, sans-serif; background:#0f172a; color:#e2e8f0; }
+      .container { max-width: 960px; margin: 0 auto; padding: 24px; }
+      .title { color: #facc15; font-weight: 800; font-size: 28px; margin: 0 0 16px; }
+      .grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
+      @media (min-width: 768px){ .grid { grid-template-columns: 1fr 1fr; } }
+      .card { border: 1px solid #1f2937; background: #0b1220; border-radius: 12px; padding: 16px; box-shadow: 0 6px 18px rgba(0,0,0,.35); }
+      .card h3 { margin: 0 0 6px; color: #facc15; font-size: 18px; font-weight: 700; }
+      .muted { color: #cbd5e1; margin: 0 0 12px; }
+      .kv { margin: 4px 0; font-size: 14px; }
+      .kv .k { color:#94a3b8; }
+      .kv .v { color:#e2e8f0; font-weight:600; }
+      .panel { border:1px solid #334155; background:#111827; padding:16px; border-radius:10px; }
+      .btn { margin-top:10px; padding:8px 12px; font-weight:700; background:#facc15; color:#111827; border:none; border-radius:8px; cursor:pointer; }
+      .btn:hover { filter: brightness(1.05); }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
