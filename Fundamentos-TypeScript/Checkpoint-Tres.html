@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <!--
+    Checkpoint 3 — Fundamentos de TypeScript
+    Ejercicio: Encontrar el número faltante en una secuencia del 1 al N (o N+1).
+
+    ▸ Este archivo HTML incluye:
+      1) Un DEMO funcional en el navegador (usa JavaScript ya compilado desde TypeScript).
+      2) El CÓDIGO TypeScript original, bien documentado en español (visible en la página y en comentarios).
+
+    ▶ Cómo usar TypeScript de forma nativa (recomendado para entrega):
+       - Crea una carpeta con este HTML y un archivo `src/main.ts`.
+       - Copia el bloque de TypeScript (más abajo) dentro de `src/main.ts`.
+       - Compila con `tsc` para generar `dist/main.js` y enlázalo en el HTML.
+
+    Nota: Por compatibilidad del navegador, este demo ejecuta la versión compilada a JS.
+  -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Checkpoint 3 — TypeScript: Número faltante</title>
+  <meta name="description" content="Demostración del ejercicio de TypeScript: encontrar el número faltante con documentación en español." />
+  <style>
+    :root{
+      --bg:#ffffff; --text:#202124; --muted:#5f6368; --border:#dfe1e5; --hover:#f8f9fa;
+      --shadow:0 1px 6px rgba(60,64,67,.28); --shadow-strong:0 2px 8px rgba(60,64,67,.35);
+      --ok:#188038; --warn:#f9ab00; --err:#d93025; --blue:#1a73e8; --radius:14px;
+    }
+    body{margin:0; font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial; color:var(--text); background:var(--bg)}
+    main{min-height:100svh; display:grid; place-items:center}
+    .wrap{width:min(880px,92vw); display:flex; flex-direction:column; gap:22px; padding:28px 0}
+    h1{font-size:28px; margin:0}
+    p{margin:0; color:var(--muted)}
+    .card{border:1px solid var(--border); border-radius:var(--radius); padding:18px; box-shadow:var(--shadow); background:#fff}
+    .row{display:flex; gap:12px; align-items:center; flex-wrap:wrap}
+    .input{
+      flex:1; min-width:260px; border:1px solid var(--border); border-radius:999px; padding:12px 16px; font-size:16px;
+      transition:box-shadow .15s ease, background .15s ease, border-color .15s ease;
+      background:#fff
+    }
+    .input:hover{ box-shadow:var(--shadow) }
+    .input:focus{ outline:none; box-shadow:var(--shadow-strong); border-color:transparent; background:var(--hover) }
+    .btn{ border:1px solid #dadce0; background:var(--hover); padding:10px 16px; border-radius:8px; cursor:pointer }
+    .btn:hover{ box-shadow:var(--shadow) }
+    .out{ font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; background:#fafafa; border:1px solid var(--border); border-radius:8px; padding:12px }
+    .tag{display:inline-block; padding:3px 8px; border-radius:999px; font-size:12px; border:1px solid var(--border); background:var(--hover); color:#334}
+    details{background:#fff; border:1px solid var(--border); border-radius:12px; padding:12px}
+    details>summary{cursor:pointer; font-weight:600; margin:-12px; padding:12px}
+    pre{margin:0; overflow:auto; background:#0b1020; color:#e6eaff; border-radius:12px; padding:14px; font-size:13px}
+    code{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
+  </style>
+</head>
+<body>
+  <main>
+    <div class="wrap">
+      <header>
+        <h1>☑️ Checkpoint 3 — TypeScript: encontrar número faltante</h1>
+        <p>Escribe una lista de enteros separados por comas (ej.: <span class="tag">3, 7, 1, 2, 8, 4, 5</span>) y presiona <em>Calcular</em>.</p>
+      </header>
+
+      <!-- Tarjeta de interacción principal -->
+      <section class="card" aria-label="Calculadora de número faltante">
+        <div class="row">
+          <label for="nums" class="solo-lector">Números (separados por coma)</label>
+          <input id="nums" class="input" type="text" placeholder="Introduce números, p. ej.: 3, 7, 1, 2, 8, 4, 5" />
+          <button class="btn" id="btnCalc" type="button">Calcular</button>
+          <button class="btn" id="btnEjemplo" type="button">Usar ejemplo</button>
+        </div>
+        <div class="row" style="margin-top:12px">
+          <output id="salida" class="out" aria-live="polite">Resultado: —</output>
+        </div>
+      </section>
+
+      <!-- Código TypeScript (visible para estudio/entrega) -->
+      <details>
+        <summary>📄 Ver código TypeScript bien documentado</summary>
+        <pre><code>// ===============================
+// main.ts — Solución en TypeScript
+// ===============================
+
+/**
+ * Devuelve el número faltante suponiendo que la secuencia debe cubrir 1..M,
+ * donde M es el máximo observado o, si no falta nada en 1..M, se asume que
+ * el faltante sería M+1 (caso común cuando el arreglo tiene longitud N y
+ * contiene valores 1..N sin huecos: entonces el faltante es N+1).
+ *
+ * Requisitos asumidos por el ejercicio (como en el ejemplo dado):
+ *  - Arreglo de enteros positivos no ordenados (puede contener repetidos).
+ *  - La intención es detectar el hueco dentro del rango consecutivo que inicia en 1.
+ *  - Si hubiera múltiples huecos, se devuelve el menor faltante &gt;= 1.
+ */
+export function encontrarNumeroFaltante(nums: number[]): number {
+  // Filtramos a positivos y normalizamos posibles datos sucios
+  const positivos = nums.filter((n) => Number.isFinite(n) &amp;&amp; n &gt; 0);
+  if (positivos.length === 0) return 1; // No hay positivos: el primer faltante es 1
+
+  // Usamos un conjunto para búsquedas O(1)
+  const set = new Set<number>(positivos);
+
+  // Hallamos el máximo para acotar la búsqueda
+  let max = 0;
+  for (const n of set) if (n &gt; max) max = n;
+
+  // Buscamos el menor entero faltante empezando en 1
+  for (let i = 1; i &lt;= max; i++) {
+    if (!set.has(i)) return i;
+  }
+
+  // Si no faltó ninguno en 1..max, el siguiente entero es el faltante
+  return max + 1;
+}
+
+// ===== Pequeñas pruebas (puedes usar vitest/jest en un proyecto real) =====
+if (import.meta &amp;&amp; (import.meta as any).env === undefined) {
+  // Caso del enunciado
+  console.log(encontrarNumeroFaltante([3, 7, 1, 2, 8, 4, 5])); // 6
+  // Casos adicionales
+  console.log(encontrarNumeroFaltante([1,2,3])); // 4
+  console.log(encontrarNumeroFaltante([2,2,2])); // 1 (no está el 1)
+  console.log(encontrarNumeroFaltante([1,1,3])); // 2
+}
+</code></pre>
+      </details>
+
+      <section class="card" aria-label="Notas">
+        <strong>Notas rápidas</strong>
+        <ul>
+          <li>El algoritmo usa <code>Set</code> para detectar ausencias en tiempo cercano a O(N).</li>
+          <li>Es robusto a duplicados y valores no positivos (los ignora).</li>
+          <li>Si el arreglo ya contiene 1..M sin huecos, devuelve <code>M+1</code>.</li>
+        </ul>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    // ============================================================
+    // Versión JavaScript compilada (equivalente a la de TypeScript)
+    // ============================================================
+
+    /**
+     * Encuentra el número faltante según la lógica descrita en el TS.
+     * @param {number[]} nums
+     * @returns {number}
+     */
+    function encontrarNumeroFaltante(nums){
+      const positivos = nums.filter((n) => Number.isFinite(n) && n > 0);
+      if (positivos.length === 0) return 1;
+      const set = new Set(positivos);
+      let max = 0; for (const n of set) if (n > max) max = n;
+      for (let i = 1; i <= max; i++){ if(!set.has(i)) return i; }
+      return max + 1;
+    }
+
+    // --------- Lógica de la interfaz del demo ---------
+    const $ = (sel) => document.querySelector(sel);
+    const entrada = $('#nums');
+    const salida  = $('#salida');
+    const btnCalc = $('#btnCalc');
+    const btnEjemplo = $('#btnEjemplo');
+
+    function parsearLista(txt){
+      // Acepta números separados por coma/espacios; ignora vacíos
+      return txt.split(/[,\s]+/).map(s => s.trim()).filter(Boolean).map(Number);
+    }
+
+    btnCalc.addEventListener('click', () => {
+      const lista = parsearLista(entrada.value);
+      if (lista.some(n => Number.isNaN(n))){
+        salida.textContent = 'Error: asegúrate de ingresar solo números separados por comas.';
+        return;
+      }
+      const res = encontrarNumeroFaltante(lista);
+      salida.textContent = 'Resultado: ' + res;
+      console.log('Entrada:', lista, '→ Faltante:', res);
+    });
+
+    btnEjemplo.addEventListener('click', () => {
+      entrada.value = '3, 7, 1, 2, 8, 4, 5';
+      btnCalc.click();
+    });
+  </script>
+</body>
+</html>
